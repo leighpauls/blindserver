@@ -18,10 +18,10 @@ def fulfill():
     request_id = body['requestId']
     first_input = body['inputs'][0]
     intent = first_input['intent']
-    payload = {}
+    output_payload = {}
 
     if intent == 'action.devices.SYNC':
-        payload = {
+        output_payload = {
             'agentUserId': 'leigh',
             'devices': [{
                 'id': 'blinds',
@@ -37,12 +37,27 @@ def fulfill():
                 },
             }]
         }
+    elif intent == 'action.devices.EXECUTE':
+        input_payload = first_input['payload']
+        commands = input_payload['commands']
+        output_commands = []
+        for command in commands:
+            executions = command['execution']
+            for execution in executions:
+                cmd = execution['command']
+                params = execution['params']
+                print(f'Command: {cmd} with param: {params}')
+            device_ids = [device['id'] for device in command['devices']]
+            output_commands.append({'ids': device_ids, 'status': 'SUCCESS'})
+        output_payload = {
+            'commands': output_commands
+        }
     else:
         raise Exception(f'Unexpected intent: {intent}')
 
     result = {
         'requestId': request_id,
-        'payload': payload,
+        'payload': output_payload,
     }
 
     return json.dumps(result)
