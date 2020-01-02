@@ -1,4 +1,5 @@
 from flask import Flask, escape, request
+import paho.mqtt.client as mqtt
 import json
 
 app = Flask(__name__)
@@ -47,6 +48,8 @@ def fulfill():
                 cmd = execution['command']
                 params = execution['params']
                 print(f'Command: {cmd} with param: {params}')
+                should_open = params['openPercent'] == 100
+                send_blinds_message(should_open)
             device_ids = [device['id'] for device in command['devices']]
             output_commands.append({'ids': device_ids, 'status': 'SUCCESS'})
         output_payload = {
@@ -61,6 +64,12 @@ def fulfill():
     }
 
     return json.dumps(result)
+
+def send_blinds_message(should_open: bool):
+    client = mqtt.Client('command_server')
+    client.connect('localhost')
+    message_info = client.publish('/blinds', payload=json.dumps({'should_open': should_open}), qos=0)
+    message_info.wait_for_publish()
 
 @app.route('/auth')
 def auth():
