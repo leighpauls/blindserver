@@ -12,9 +12,40 @@ def hello():
 def healthz():
     return 'OK'
 
-@app.route('/fulfill')
+@app.route('/fulfill', methods=['POST'])
 def fulfill():
-    return 'OK'
+    body = request.json
+    request_id = body['requestId']
+    first_input = body['inputs'][0]
+    intent = first_input['intent']
+    payload = {}
+
+    if intent == 'action.devices.SYNC':
+        payload = {
+            'agentUserId': 'leigh',
+            'devices': [{
+                'id': 'blinds',
+                'type': 'action.devices.types.BLINDS',
+                'traits': ['action.devices.traits.OpenClose'],
+                'name': {
+                    'name': 'blinds',
+                    'nicknames': ['living room blinds'],
+                },
+                'willReportState': False,
+                'attributes': {
+                    'discreteOnlyOpenClose': True,
+                },
+            }]
+        }
+    else:
+        raise Exception(f'Unexpected intent: {intent}')
+
+    result = {
+        'requestId': request_id,
+        'payload': payload,
+    }
+
+    return json.dumps(result)
 
 @app.route('/auth')
 def auth():
