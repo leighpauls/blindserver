@@ -15,7 +15,9 @@ def handle_message(_client, _userdata, message):
 
 if __name__ == '__main__':
     client = mqtt.Client('pi_listener')
+    print('connecting...')
     client.connect('blinds-mqtt.leighpauls.com')
+    print('connected')
 
     client.subscribe('/blinds')
     client.on_message = handle_message
@@ -23,17 +25,23 @@ if __name__ == '__main__':
     open_command = gpiozero.LED(23)
     close_command = gpiozero.LED(24)
 
+    open_command.on()
+    close_command.on()
+
     while True:
-        client.loop()
+        if client.loop() != mqtt.MQTT_ERR_SUCCESS:
+            print('lost connection')
+            exit()
+
         if was_open != desired_open:
             print(f'change open from {was_open} to {desired_open}')
             was_open = desired_open
             if desired_open:
-                open_command.on()
+                close_command.off()
             else:
-                close_command.on()
+                open_command.off()
 
             time.sleep(1)
-            open_command.off()
-            close_command.off()
+            open_command.on()
+            close_command.on()
 
