@@ -1,0 +1,13 @@
+[Unit]
+Description=Blinds Pi Client
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/home/pi/src/blindserver/run_pi_client.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
