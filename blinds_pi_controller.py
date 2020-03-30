@@ -31,18 +31,24 @@ class BlindController:
 
     def control_step(self, cur_time: float):
         # Check if the command is completed or expired
-        if (self.command_expires_time and cur_time > self.command_expires_time) \
-           or (self.command_position == protocol.OPEN_CMD and self.io.up_sensor.is_pressed) \
-           or (self.command_position == protocol.CLOSE_CMD and self.io.down_sensor.is_pressed):
-            self.command_expires_time = None
-            self.command_position = None
+        if self.command_expires_time and cur_time > self.command_expires_time:
+            self._halt("expired")
+        elif self.command_position == protocol.OPEN_CMD and self.io.up_sensor.is_pressed:
+            self._halt("open sensor triggered")
+        elif self.command_position == protocol.CLOSE_CMD and self.io.down_sensor.is_pressed:
+            self._halt("close sensor triggered")
 
         self.io.up_motor.value = self.command_position == protocol.OPEN_CMD
         self.io.down_motor.value = self.command_position == protocol.CLOSE_CMD
 
+    def _halt(self, reason: str):
+        print(f"stopping: {reason}")
+        self.command_expires_time = None
+        self.command_position = None
+
 
 blinds = [
-    BlindController(BlindIO(2, 3, 17, 27))
+    BlindController(BlindIO(2, 3, 6, 13))
 ]
 
 COMMAND_EXPIRES_SECONDS = 5.0
@@ -51,7 +57,7 @@ async def on_connected(reader, writer):
     data = await reader.read(128)
     writer.close()
     if data not in protocol.COMMANDS:
-        print("unknown command received")
+        print("unknown command received", data)
         return
     print(f'recieved {data} network command')
     set_command(data, time.monotonic())
